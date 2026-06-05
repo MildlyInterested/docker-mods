@@ -70,6 +70,11 @@ cp -r /tmp/crowdsec/lua-mod/lib/* ${LIB_PATH}
 
 cp /tmp/crowdsec/nginx/crowdsec_nginx.conf /etc/nginx/http.d
 
+# ngx.socket.tcp() is forbidden in init_worker_by_lua context; defer SetupMetrics
+# to a timer callback where cosockets are available
+sed -i 's/cs:SetupMetrics()/ngx.timer.at(0, function(premature) if not premature then cs:SetupMetrics() end end)/' \
+    /etc/nginx/http.d/crowdsec_nginx.conf
+
 # Sed in crowdsec include
 if ! grep -q '[^#]include /etc/nginx/http.d/\*.conf;' '/config/nginx/nginx.conf' && ! grep -q '[^#]include /etc/nginx/conf.d/\*.conf;' '/config/nginx/nginx.conf'; then
     if grep -q '#include /etc/nginx/http.d/\*.conf;' '/config/nginx/nginx.conf'; then

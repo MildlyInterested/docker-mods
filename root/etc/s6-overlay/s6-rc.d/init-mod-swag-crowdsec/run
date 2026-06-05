@@ -70,9 +70,9 @@ cp -r /tmp/crowdsec/lua-mod/lib/* ${LIB_PATH}
 
 cp /tmp/crowdsec/nginx/crowdsec_nginx.conf /etc/nginx/http.d
 
-# ngx.socket.tcp() is forbidden in init_worker_by_lua context; defer SetupMetrics
-# to a timer callback where cosockets are available
-sed -i 's/cs:SetupMetrics()/ngx.timer.at(0, function(premature) if not premature then cs:SetupMetrics() end end)/' \
+# SetupMetrics sends telemetry via lua-resty-http which segfaults with the standard
+# nginx lua module (not OpenResty); disable it as it is not core functionality
+sed -i 's/cs:SetupMetrics()/-- cs:SetupMetrics()/' \
     /etc/nginx/http.d/crowdsec_nginx.conf
 
 # Sed in crowdsec include
